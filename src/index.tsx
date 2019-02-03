@@ -35,8 +35,6 @@ const Result = ({ result }) => (
   </div>
 )
 
-type State = [string, string[]]
-
 const useSeachCallback = () => {
   const initial: [string, string[]] = ["", []]
   return useEventCallback(
@@ -54,6 +52,7 @@ const useSeachCallback = () => {
     initial
   )
 }
+
 export const App = () => {
   const [keyboardCallack, [word, result]] = useSeachCallback()
   return (
@@ -77,13 +76,17 @@ const useSearch = (word) =>
     [word]
   )
 
+const SearchAndResult = (word) => {
+  let result = useSearch(word)
+  return <Result result={result} />
+}
+
 export const App2 = () => {
   const [word, setWord] = useState("")
-  let result = useSearch(word)
   return (
     <div>
       <Search changeInput={setWord} word={word} />
-      <Result result={result} />
+      <SearchAndResult word={word} />
     </div>
   )
 }
