@@ -1,11 +1,9 @@
 import * as React from "react"
 import * as ReactDOM from "react-dom"
 import { useObservable } from "rxjs-hooks"
-import { pluck, map, filter, scan, bufferTime } from "rxjs/operators"
+import { pluck, map, filter, scan, bufferTime, tap } from "rxjs/operators"
 import { fromEvent, pipe } from "rxjs"
 import { Shake } from "reshake"
-
-const konamiCommand = ["↑", "↑", "↓", "↓", "←", "→", "←", "→", "B", "A"]
 
 const arrowMap = {
   ArrowUp: "↑",
@@ -29,13 +27,17 @@ const convertKeyMap = (keys: number[]) => {
   return null
 }
 
-const convertVisible = key => {
+const keyEventEpic = () => {
+  return pipe()
+}
+
+const convertVisible = (key) => {
   if (arrowMap[key]) return arrowMap[key]
   if (key.length === 1) return key.toUpperCase()
   return null
 }
 
-const Konami = () => {
+const SucceedCommand = ({ succeedCommand }) => {
   return (
     <Shake
       h={74}
@@ -48,43 +50,67 @@ const Konami = () => {
       fixedStop={false}
       freez={false}
     >
-      <h1>Konami Command Succeed</h1>
+      <h1>{succeedCommand} Succeed</h1>
     </Shake>
   )
 }
 
-const keyEventStream = length => {
+const convertKeys = (keys) =>
+  keys.length === 1
+    ? convertVisible(keys[0].key)
+    : convertKeyMap(keys.map(({ keyCode }) => keyCode).sort())
+
+const keyEventStream = (length) => {
   return pipe(
-    pluck("key"),
-    map(convertVisible),
-    filter(value => !!value),
+    map(({ key, keyCode }) => ({ key, keyCode })),
+    tap((k) => console.log("key", k)),
+    bufferTime(60),
+    filter((item) => item.length > 0),
+    map((keys) => convertKeys(keys)),
+    filter((value) => !!value),
     scan<string>((curr, next) => [...curr, next], []),
     map((cmd: string[]) => cmd.slice(-1 * length))
   )
 }
 
-export const useKeyCommnads = () => {
-  return useObservable(() => {
-    return fromEvent(document, "keydown").pipe(
-      keyEventStream(konamiCommand.length)
-    )
-  }, [])
+export const useKeyCommnads = (length: number) => {
+  return useObservable(
+    () => fromEvent(document, "keydown").pipe(keyEventStream(length)),
+    []
+  )
 }
 
-export const useKonamiCommand = () => {
-  const keyeventLog = useKeyCommnads()
-  return {
-    keyeventLog,
-    konami: konamiCommand.join("") === keyeventLog.join("")
+const isCommandSucceed = (keyeventLog: string[], command: string[]) => {
+  const current = keyeventLog.slice(-1 * command.length)
+  return command.join("") === current.join("")
+}
+
+export const useCommands = () => {
+  const commands = {
+    konami: ["↑", "↑", "↓", "↓", "←", "→", "←", "→", "B", "A"],
+    shoryuken: ["↓", "→", "↘", "P"],
+    hadoken: ["↓", "↘", "→", "P"]
   }
+  const saveLength = Math.max(...Object.values(commands).map((l) => l.length))
+  const keyeventLog = useKeyCommnads(saveLength)
+  const succeedCommands = Object.entries(commands)
+    .filter(([_, command]) => {
+      return isCommandSucceed(keyeventLog, command)
+    })
+    .map(([name, commands]) => name)
+  return { keyeventLog, succeedCommands }
 }
 
 export const App = () => {
-  const { keyeventLog, konami } = useKonamiCommand()
+  const { keyeventLog, succeedCommands } = useCommands()
   return (
     <div>
       <div>please key type: {keyeventLog}</div>
-      <div>{konami ? <Konami /> : null}</div>
+      <div>
+        {succeedCommands.map((command) => (
+          <SucceedCommand succeedCommand={command} />
+        ))}
+      </div>
     </div>
   )
 }
