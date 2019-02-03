@@ -13,7 +13,7 @@ import {
   startWith,
   distinctUntilChanged
 } from "rxjs/operators"
-import { fromEvent, pipe, combineLatest, zip } from "rxjs"
+import { fromEvent, pipe, combineLatest, zip, from, of } from "rxjs"
 import { useState } from "react"
 import { searchApi } from "./api"
 
@@ -31,26 +31,19 @@ const Search = ({ word, result, changeInput }) => {
   )
 }
 
-type State = {
-  word: string
-  result: string[]
-}
+type State = [string, string[]]
 
 export const App = () => {
   const initial: [string, string[]] = ["", []] //{ word: "", result: [] }
   const [keyboardCallack, [word, result]] = useEventCallback(
     (event$) =>
       combineLatest(
-        event$.pipe(
-          tap(console.log),
-          map((a) => a)
-        ),
+        event$, // 入力を即時反映させるために、
         event$.pipe(
           startWith([]),
           debounceTime(400),
           distinctUntilChanged(),
           mergeMap((word) => searchApi(word)),
-          tap(console.log),
           map((result) => (result !== undefined ? result : []))
         )
       ),
@@ -63,4 +56,33 @@ export const App = () => {
   )
 }
 
-ReactDOM.render(<App />, document.getElementById("root"))
+const useSearch = (word) =>
+  useObservable<string[], string[]>(
+    (word$) =>
+      word$.pipe(
+        debounceTime(400),
+        distinctUntilChanged(),
+        mergeMap((word) => searchApi(word)),
+        map((result) => (result !== undefined ? result : []))
+      ),
+    [],
+    [word]
+  )
+
+export const App2 = () => {
+  const [word, setWord] = useState("")
+  let result = useSearch(word)
+  return (
+    <div>
+      <Search changeInput={setWord} word={word} result={result} />
+    </div>
+  )
+}
+
+ReactDOM.render(
+  <div>
+    <App />
+    <App2 />
+  </div>,
+  document.getElementById("root")
+)
