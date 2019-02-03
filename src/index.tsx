@@ -1,7 +1,7 @@
 import * as React from "react"
 import * as ReactDOM from "react-dom"
 import { useObservable } from "rxjs-hooks"
-import { pluck, map, filter, scan, bufferTime, tap } from "rxjs/operators"
+import { map, filter, scan, bufferTime, tap } from "rxjs/operators"
 import { fromEvent, pipe } from "rxjs"
 import { Shake } from "reshake"
 
@@ -25,10 +25,6 @@ const convertKeyMap = (keys: number[]) => {
       return "↘"
   }
   return null
-}
-
-const keyEventEpic = () => {
-  return pipe()
 }
 
 const convertVisible = (key) => {
@@ -60,9 +56,11 @@ const convertKeys = (keys) =>
     ? convertVisible(keys[0].key)
     : convertKeyMap(keys.map(({ keyCode }) => keyCode).sort())
 
+type KeyTuple = { key: string; keyCode: number }
+
 const keyEventStream = (length) => {
   return pipe(
-    map(({ key, keyCode }) => ({ key, keyCode })),
+    map<KeyboardEvent, KeyTuple>(({ key, keyCode }) => ({ key, keyCode })),
     tap((k) => console.log("key", k)),
     bufferTime(60),
     filter((item) => item.length > 0),
@@ -75,7 +73,10 @@ const keyEventStream = (length) => {
 
 export const useKeyCommnads = (length: number) => {
   return useObservable(
-    () => fromEvent(document, "keydown").pipe(keyEventStream(length)),
+    () =>
+      fromEvent<KeyboardEvent>(document, "keydown").pipe(
+        keyEventStream(length)
+      ),
     []
   )
 }
