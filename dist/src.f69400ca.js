@@ -43515,7 +43515,7 @@ exports.default = {
   ShakeRotate: ShakeRotate,
   ShakeCrazy: ShakeCrazy
 };
-},{"./Shake":"../node_modules/reshake/dist/Shake.js","./Shaking":"../node_modules/reshake/dist/Shaking.js","./shakes":"../node_modules/reshake/dist/shakes.js","react":"../node_modules/react/index.js"}],"App.tsx":[function(require,module,exports) {
+},{"./Shake":"../node_modules/reshake/dist/Shake.js","./Shaking":"../node_modules/reshake/dist/Shaking.js","./shakes":"../node_modules/reshake/dist/shakes.js","react":"../node_modules/react/index.js"}],"index.tsx":[function(require,module,exports) {
 "use strict";
 
 var __importStar = this && this.__importStar || function (mod) {
@@ -43532,6 +43532,8 @@ exports.__esModule = true;
 
 var React = __importStar(require("react"));
 
+var ReactDOM = __importStar(require("react-dom"));
+
 var rxjs_hooks_1 = require("rxjs-hooks");
 
 var operators_1 = require("rxjs/operators");
@@ -43546,6 +43548,26 @@ var arrowMap = {
   ArrowDown: "↓",
   ArrowLeft: "←",
   ArrowRight: "→"
+};
+
+var convertKeyMap = function convertKeyMap(keys) {
+  var join = keys.join("_");
+
+  switch (join) {
+    case "37_38":
+      return "↖";
+
+    case "37_40":
+      return "↙";
+
+    case "38_39":
+      return "↗";
+
+    case "39_40":
+      return "↘";
+  }
+
+  return null;
 };
 
 var convertVisible = function convertVisible(key) {
@@ -43578,19 +43600,18 @@ var keyEventStream = function keyEventStream(length) {
   }));
 };
 
-exports.useKonamiCommand = function () {
-  var init = {
-    keyeventLog: [],
-    konami: false
-  };
+exports.useKeyCommnads = function () {
   return rxjs_hooks_1.useObservable(function () {
-    return rxjs_1.fromEvent(document, "keydown").pipe(keyEventStream(konamiCommand.length), operators_1.map(function (latestCmd) {
-      return {
-        keyeventLog: latestCmd,
-        konami: konamiCommand.join("") === latestCmd.join("")
-      };
-    }));
-  }, init);
+    return rxjs_1.fromEvent(document, "keydown").pipe(keyEventStream(konamiCommand.length));
+  }, []);
+};
+
+exports.useKonamiCommand = function () {
+  var keyeventLog = exports.useKeyCommnads();
+  return {
+    keyeventLog: keyeventLog,
+    konami: konamiCommand.join("") === keyeventLog.join("")
+  };
 };
 
 exports.App = function () {
@@ -43601,38 +43622,8 @@ exports.App = function () {
   return React.createElement("div", null, React.createElement("div", null, "please key type: ", keyeventLog), React.createElement("div", null, konami ? React.createElement(Konami, null) : null));
 };
 
-exports["default"] = function () {
-  return React.createElement(exports.App, null);
-};
-},{"react":"../node_modules/react/index.js","rxjs-hooks":"../node_modules/rxjs-hooks/dist/esm/index.js","rxjs/operators":"../node_modules/rxjs/_esm5/operators/index.js","rxjs":"../node_modules/rxjs/_esm5/index.js","reshake":"../node_modules/reshake/dist/index.js"}],"index.tsx":[function(require,module,exports) {
-"use strict";
-
-var __importStar = this && this.__importStar || function (mod) {
-  if (mod && mod.__esModule) return mod;
-  var result = {};
-  if (mod != null) for (var k in mod) {
-    if (Object.hasOwnProperty.call(mod, k)) result[k] = mod[k];
-  }
-  result["default"] = mod;
-  return result;
-};
-
-var __importDefault = this && this.__importDefault || function (mod) {
-  return mod && mod.__esModule ? mod : {
-    "default": mod
-  };
-};
-
-exports.__esModule = true;
-
-var React = __importStar(require("react"));
-
-var ReactDOM = __importStar(require("react-dom"));
-
-var App_1 = __importDefault(require("./App"));
-
-ReactDOM.render(React.createElement(App_1.default, null), document.getElementById("root"));
-},{"react":"../node_modules/react/index.js","react-dom":"../node_modules/react-dom/index.js","./App":"App.tsx"}],"../node_modules/parcel/src/builtins/hmr-runtime.js":[function(require,module,exports) {
+ReactDOM.render(React.createElement(exports.App, null), document.getElementById("root"));
+},{"react":"../node_modules/react/index.js","react-dom":"../node_modules/react-dom/index.js","rxjs-hooks":"../node_modules/rxjs-hooks/dist/esm/index.js","rxjs/operators":"../node_modules/rxjs/_esm5/operators/index.js","rxjs":"../node_modules/rxjs/_esm5/index.js","reshake":"../node_modules/reshake/dist/index.js"}],"../node_modules/parcel/src/builtins/hmr-runtime.js":[function(require,module,exports) {
 var global = arguments[3];
 var OVERLAY_ID = '__parcel__error__overlay__';
 var OldModule = module.bundle.Module;
@@ -43659,7 +43650,7 @@ var parent = module.bundle.parent;
 if ((!parent || !parent.isParcelRequire) && typeof WebSocket !== 'undefined') {
   var hostname = "" || location.hostname;
   var protocol = location.protocol === 'https:' ? 'wss' : 'ws';
-  var ws = new WebSocket(protocol + '://' + hostname + ':' + "56839" + '/');
+  var ws = new WebSocket(protocol + '://' + hostname + ':' + "52518" + '/');
 
   ws.onmessage = function (event) {
     var data = JSON.parse(event.data);
